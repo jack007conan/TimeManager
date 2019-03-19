@@ -61,9 +61,36 @@ namespace Time {
 
 	public:
 		//operator
-		bool operator==(const unsigned int &o);
-		bool operator!=(const unsigned int &o) {
+		bool operator==(const unsigned int &o) const;
+		bool operator!=(const unsigned int &o) const {
 			return !((*this) == o);
 		}
+		bool operator>(const unsigned int &o) const;
+		bool operator<(const unsigned int &o) const;
+		bool operator>=(const unsigned int &o) const {
+			return !((*this) < o);
+		}
+		bool operator<=(const unsigned int &o) const {
+			return !((*this) > o);
+		}
 	};
+}
+
+inline bool operator==(const unsigned int &o1, const Time::Manager &o2) {
+	return (o2 == o1);
+}
+inline bool operator!=(const unsigned int &o1, const Time::Manager &o2) {
+	return (o2 != o1);
+}
+inline bool operator>(const unsigned int &o1, const Time::Manager &o2) {
+	return (o2 < o1);
+}
+inline bool operator<(const unsigned int &o1, const Time::Manager &o2) {
+	return (o2 > o1);
+}
+inline bool operator>=(const unsigned int &o1, const Time::Manager &o2) {
+	return (o2 <= o1);
+}
+inline bool operator<=(const unsigned int &o1, const Time::Manager &o2) {
+	return (o2 >= o1);
 }

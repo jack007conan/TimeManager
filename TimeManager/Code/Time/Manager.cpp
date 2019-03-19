@@ -92,6 +92,13 @@ const unsigned int Time::Manager::m_g_ini = (unsigned int)(GetNowCount());
 unsigned int Time::Manager::m_g_now = 0;
 unsigned int Time::Manager::m_g_dur = 0;
 
-bool Time::Manager::operator==(const unsigned int &o) {
-	return (m_now - (unsigned int)(o * ((double)(50) / 3)) < m_dur);
+bool Time::Manager::operator==(const unsigned int &o) const {
+	return (m_now - mGetCount(o) < m_dur);
+}
+
+bool Time::Manager::operator<(const unsigned int &o) const {
+	return ((int)(mGetCount(o) - m_now) > 0);
+}
+bool Time::Manager::operator>(const unsigned int &o) const {
+	return ((int)(m_now - m_dur - mGetCount(o)) > 0);
 }

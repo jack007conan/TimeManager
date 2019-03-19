@@ -20,6 +20,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ClearDrawScreen();
 		Time::Manager::update();
 
+		if (CheckHitKey(KEY_INPUT_SPACE)) t.init();
+
 		DrawFormatString(0, 0, 0xffffff, "%u", t.getNow());
 
 		ScreenFlip();

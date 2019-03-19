@@ -27,7 +27,7 @@ namespace Time {
 		void stop(const unsigned int &stopFrame); //m_leftStopFrameを書き換え
 		void stop(); //startするまでstop
 		void start(); //stopされてたものをstopFrameにかかわらずその地点から動かす
-		void init(); //上の階層は変えずにその他要素を初期値に戻す
+		void init(); //上の階層の情報を除いてメンバをすべて初期状態に戻す
 
 	private: 
 		//内部インライン関数

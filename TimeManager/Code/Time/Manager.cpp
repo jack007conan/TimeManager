@@ -52,17 +52,20 @@ void Manager::stop(const unsigned int &stopFrame) {
 	m_leftStopFrame = stopFrame;
 }
 
-void Manager::stop() { //挙動未確認
+void Manager::stop() {
 	m_leftStopFrame = (unsigned int)(-1);
 }
-void Manager::start() { //挙動未確認
+void Manager::start() {
 	m_leftStopFrame = 0;
 	m_stopFrame += m_baseNow - m_ini - mGetCount(m_stopFrame) - m_now;
 }
 
-void Manager::init() { //未完成
+void Manager::init() {
 	m_ini = m_baseNow;
-
+	m_now = 0;
+	m_dur = 0;
+	m_stopFrame = 0;
+	m_leftStopFrame = 0;
 }
 
 void Manager::update() {

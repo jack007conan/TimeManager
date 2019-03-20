@@ -29,18 +29,7 @@ namespace Time {
 		void start(); //stopされてたものをstopFrameにかかわらずその地点から動かす
 		void init(); //上の階層の情報を除いてメンバをすべて初期状態に戻す
 
-	private: 
-		//内部インライン関数
-		unsigned int mGetCount(const unsigned int &frame) const { //絶対時間に変換して返す(Release時のみ)
-#ifndef NDEBUG
-			return frame;
-#else
-			return (unsigned int)(frame * ((double)1000 / FrameRate));
-#endif
-		}
-
 		//とりあえずの関数
-	public:
 		const auto &getNow() {
 			return m_now;
 		}

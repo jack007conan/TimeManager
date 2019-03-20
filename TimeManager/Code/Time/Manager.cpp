@@ -1,6 +1,26 @@
 #include"Manager.h"
 #include<DxLib.h>
 
+namespace {
+	inline unsigned int GetCountfromFrame(const unsigned int &frame) {
+#ifndef NDEBUG
+		return frame;
+#else
+		return (unsigned int)(frame * ((double)1000 / Time::FrameRate));
+#endif
+	}
+
+	inline unsigned int GetGrobalCount() {
+#ifndef NDEBUG
+		static unsigned int frame = (unsigned int)(-1);
+		frame++;
+		return frame;
+#else
+		return (unsigned int)(GetNowCount()); //OS‹N“®‚©‚ç‚ÌŠÔ‚ğƒ~ƒŠ•b‚Å•Ô‚·ŠÖ”
+#endif
+	}
+}
+
 using namespace Time;
 
 Manager::Manager() :
@@ -32,16 +52,16 @@ Manager::~Manager() {
 }
 
 void Manager::m_update() {
-	unsigned int t = m_baseNow - m_ini - mGetCount(m_stopFrame);
+	unsigned int t = m_baseNow - m_ini - GetCountfromFrame(m_stopFrame);
 	m_dur = t - m_now;
 	if (m_leftStopFrame == 0) {
 		m_now = t;
 	}
-	else if (mGetCount(m_leftStopFrame) >= m_dur) {
+	else if (GetCountfromFrame(m_leftStopFrame) >= m_dur) {
 		m_dur = 0;
 	}
 	else {
-		m_dur -= mGetCount(m_leftStopFrame);
+		m_dur -= GetCountfromFrame(m_leftStopFrame);
 		m_now += m_dur;
 		m_stopFrame += m_leftStopFrame;
 		m_leftStopFrame = 0;
@@ -57,7 +77,7 @@ void Manager::stop() {
 }
 void Manager::start() {
 	m_leftStopFrame = 0;
-	m_stopFrame += m_baseNow - m_ini - mGetCount(m_stopFrame) - m_now;
+	m_stopFrame += m_baseNow - m_ini - GetCountfromFrame(m_stopFrame) - m_now;
 }
 
 void Manager::init() {
@@ -69,14 +89,9 @@ void Manager::init() {
 }
 
 void Manager::update() {
-#ifndef NDEBUG
-	m_g_dur = 1;
-	m_g_now++;
-#else
-	unsigned int t = (unsigned int)(GetNowCount()) - m_g_ini;
+	unsigned int t = GetGrobalCount() - m_g_ini;
 	m_g_dur = t - m_g_now;
 	m_g_now = t;
-#endif
 
 	for (auto &i : mList) {
 		i->m_update();
@@ -84,21 +99,17 @@ void Manager::update() {
 }
 
 std::list<Time::Manager*> Manager::mList;
-#ifndef NDEBUG
-const unsigned int Time::Manager::m_g_ini = 0;
-#else
-const unsigned int Time::Manager::m_g_ini = (unsigned int)(GetNowCount());
-#endif
+const unsigned int Time::Manager::m_g_ini = GetGrobalCount();
 unsigned int Time::Manager::m_g_now = 0;
 unsigned int Time::Manager::m_g_dur = 0;
 
 bool Time::Manager::operator==(const unsigned int &o) const {
-	return (m_now - mGetCount(o) < m_dur);
+	return (m_now - GetCountfromFrame(o) < m_dur);
 }
 
 bool Time::Manager::operator<(const unsigned int &o) const {
-	return ((int)(mGetCount(o) - m_now) > 0);
+	return ((int)(GetCountfromFrame(o) - m_now) > 0);
 }
 bool Time::Manager::operator>(const unsigned int &o) const {
-	return ((int)(m_now - m_dur - mGetCount(o)) > 0);
+	return ((int)(m_now - m_dur - GetCountfromFrame(o)) > 0);
 }

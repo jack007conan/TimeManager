@@ -9,6 +9,13 @@ namespace {
 		return (unsigned int)(frame * ((double)1000 / Time::FrameRate));
 #endif
 	}
+	inline unsigned int GetCount(const unsigned int &count) {
+#ifndef NDEBUG
+		return GetCountfromFrame(count);
+#else
+		return count;
+#endif 
+	}
 
 	inline unsigned int GetGrobalCount() {
 #ifndef NDEBUG
@@ -17,6 +24,21 @@ namespace {
 		return frame;
 #else
 		return (unsigned int)(GetNowCount()); //OS‹N“®‚©‚ç‚ÌŽžŠÔ‚ðƒ~ƒŠ•b‚Å•Ô‚·ŠÖ”
+#endif
+	}
+
+	inline float GetFramefromCountf(const unsigned int &count) {
+#ifndef NDEBUG
+		return (float)(count);
+#else
+		return ((float)(count * 3) / 50);
+#endif
+	}
+	inline double GetFrameformCountd(const unsigned int &count) {
+#ifndef NDEBUG
+		return (double)(count);
+#else
+		return ((double)(count) * 3 / 50);
 #endif
 	}
 }
@@ -36,7 +58,7 @@ Manager::Manager() :
 }
 
 Manager::Manager(Manager *manager) :
-	m_baseNow(manager->getNow()),
+	m_baseNow(manager->m_now),
 	m_ini(m_baseNow),
 	m_now(0),
 	m_dur(0),
@@ -86,6 +108,16 @@ void Manager::init() {
 	m_dur = 0;
 	m_stopFrame = 0;
 	m_leftStopFrame = 0;
+}
+
+float Manager::getDur() const {
+	return (GetFramefromCountf(m_dur));
+}
+double Manager::getNow() const {
+	return (GetFrameformCountd(m_now));
+}
+unsigned int Manager::getNowCount() const {
+	return (GetCount(m_now));
 }
 
 void Manager::update() {

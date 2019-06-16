@@ -28,7 +28,7 @@ namespace Time {
 		void stop(); //startするまでstop
 		void start(); //stopされてたものをstopFrameにかかわらずその地点から動かす
 		void init(); //上の階層の情報を除いてメンバをすべて初期状態に戻す
-		float getDur() const; //m_durをフレーム数換算したもの
+		double getDur() const; //m_durをフレーム数換算したもの
 		double getNow() const; //m_nowをフレーム数換算したもの m_nowが大きくなると誤差も大きくなるので注意
 		unsigned int getNowCount() const; //現在の絶対時間を取得
 

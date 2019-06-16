@@ -1,20 +1,40 @@
 #include"Manager.h"
 #include<DxLib.h>
 
+
 namespace {
-	inline unsigned int GetCountfromFrame(const unsigned int &frame) {
+
+	inline unsigned int GetCountfromFrame(const unsigned int& frame) {
+		return (unsigned int)(frame * ((double)1000 / Time::FrameRate));
+}
+	template<typename T = double>
+	inline T GetFramefromCount(const unsigned int& count) {
+		return ((T)(count) * 3 / 50);
+	}
+
+	inline unsigned int GetCount(const unsigned int& x) {
+#ifndef NDEBUG
+		return GetCountfromFrame(x);
+#else
+		return x;
+#endif
+	}
+
+	template<typename T = double>
+	inline T GetFrame(const unsigned int& x) {
+#ifndef NDEBUG
+		return (T)x;
+#else
+		return GetFramefromCount<T>(x);
+#endif
+	}
+
+	inline unsigned int TransFrame(const unsigned int& frame) {
 #ifndef NDEBUG
 		return frame;
 #else
-		return (unsigned int)(frame * ((double)1000 / Time::FrameRate));
+		return GetCountfromFrame(frame);
 #endif
-	}
-	inline unsigned int GetCount(const unsigned int &count) {
-#ifndef NDEBUG
-		return GetCountfromFrame(count);
-#else
-		return count;
-#endif 
 	}
 
 	inline unsigned int GetGrobalCount() {
@@ -26,22 +46,7 @@ namespace {
 		return (unsigned int)(GetNowCount()); //OS‹N“®‚©‚ç‚ÌŽžŠÔ‚ðƒ~ƒŠ•b‚Å•Ô‚·ŠÖ”
 #endif
 	}
-
-	inline float GetFramefromCountf(const unsigned int &count) {
-#ifndef NDEBUG
-		return (float)(count);
-#else
-		return ((float)(count * 3) / 50);
-#endif
 	}
-	inline double GetFrameformCountd(const unsigned int &count) {
-#ifndef NDEBUG
-		return (double)(count);
-#else
-		return ((double)(count) * 3 / 50);
-#endif
-	}
-}
 
 using namespace Time;
 
@@ -74,16 +79,16 @@ Manager::~Manager() {
 }
 
 void Manager::m_update() {
-	unsigned int t = m_baseNow - m_ini - GetCountfromFrame(m_stopFrame);
+	unsigned int t = m_baseNow - m_ini - TransFrame(m_stopFrame);
 	m_dur = t - m_now;
 	if (m_leftStopFrame == 0) {
 		m_now = t;
 	}
-	else if (GetCountfromFrame(m_leftStopFrame) >= m_dur) {
+	else if (TransFrame(m_leftStopFrame) >= m_dur) {
 		m_dur = 0;
 	}
 	else {
-		m_dur -= GetCountfromFrame(m_leftStopFrame);
+		m_dur -= TransFrame(m_leftStopFrame);
 		m_now += m_dur;
 		m_stopFrame += m_leftStopFrame;
 		m_leftStopFrame = 0;
@@ -99,7 +104,7 @@ void Manager::stop() {
 }
 void Manager::start() {
 	m_leftStopFrame = 0;
-	m_stopFrame += m_baseNow - m_ini - GetCountfromFrame(m_stopFrame) - m_now;
+	m_stopFrame = (GetFrame<unsigned int>(m_baseNow - m_ini - m_now));
 }
 
 void Manager::init() {
@@ -110,11 +115,11 @@ void Manager::init() {
 	m_leftStopFrame = 0;
 }
 
-float Manager::getDur() const {
-	return (GetFramefromCountf(m_dur));
+double Manager::getDur() const {
+	return (GetFrame(m_dur));
 }
 double Manager::getNow() const {
-	return (GetFrameformCountd(m_now));
+	return (GetFrame(m_now));
 }
 unsigned int Manager::getNowCount() const {
 	return (GetCount(m_now));
@@ -136,12 +141,12 @@ unsigned int Time::Manager::m_g_now = 0;
 unsigned int Time::Manager::m_g_dur = 0;
 
 bool Time::Manager::operator==(const unsigned int &o) const {
-	return (m_now - GetCountfromFrame(o) < m_dur);
+	return (m_now - TransFrame(o) < m_dur);
 }
 
 bool Time::Manager::operator<(const unsigned int &o) const {
-	return ((int)(GetCountfromFrame(o) - m_now) > 0);
+	return ((int)(TransFrame(o) - m_now) > 0);
 }
 bool Time::Manager::operator>(const unsigned int &o) const {
-	return ((int)(m_now - m_dur - GetCountfromFrame(o)) > 0);
+	return ((int)(m_now - m_dur - TransFrame(o)) > 0);
 }

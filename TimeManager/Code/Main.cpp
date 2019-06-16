@@ -25,7 +25,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ClearDrawScreen();
 		Time::Manager::update();
 
-		if (CheckHitKey(KEY_INPUT_SPACE)) t.init();
+		if (CheckHitKey(KEY_INPUT_Z)) t.stop();
+		if (CheckHitKey(KEY_INPUT_X)) t.start();
+
 
 		DrawFormatString(0, 0, 0xffffff, "%lf", t.getNow() / 60); //‚’¼“¯Šú‚ğØ‚Á‚Ä‚¢‚Ä‚à³í‚ÉŠÔ‚ğæ“¾
 

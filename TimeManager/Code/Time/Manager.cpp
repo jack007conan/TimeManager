@@ -1,147 +1,114 @@
 #include"Manager.h"
 #include<DxLib.h>
 
-namespace {
-	inline unsigned int GetCountfromFrame(const unsigned int &frame) {
+Time::Unit Time::Unit::GetGlobalTime() {
 #ifndef NDEBUG
-		return frame;
+	static unsigned int t = (unsigned int)(-1);
+	t++;
+	return Time::Unit(t * 60 / gFrameRate);
 #else
-		return (unsigned int)(frame * ((double)1000 / Time::FrameRate));
+	//時間がミリ秒で帰ってくる関数
+	return Time::Unit(GetNowCount());
 #endif
-	}
-	inline unsigned int GetCount(const unsigned int &count) {
-#ifndef NDEBUG
-		return GetCountfromFrame(count);
-#else
-		return count;
-#endif 
-	}
-
-	inline unsigned int GetGrobalCount() {
-#ifndef NDEBUG
-		static unsigned int frame = (unsigned int)(-1);
-		frame++;
-		return frame;
-#else
-		return (unsigned int)(GetNowCount()); //OS起動からの時間をミリ秒で返す関数
-#endif
-	}
-
-	inline float GetFramefromCountf(const unsigned int &count) {
-#ifndef NDEBUG
-		return (float)(count);
-#else
-		return ((float)(count * 3) / 50);
-#endif
-	}
-	inline double GetFrameformCountd(const unsigned int &count) {
-#ifndef NDEBUG
-		return (double)(count);
-#else
-		return ((double)(count) * 3 / 50);
-#endif
-	}
 }
 
-using namespace Time;
+Time::Unit Time::Unit::GetUnitFromFrame(double frame) {
+#ifndef NDEBUG
+	return Unit((unsigned int)frame);
+#else
+	return Unit(GetCountFromFrame(frame));
+#endif
+}
 
-Manager::Manager() :
-	m_baseNow(m_g_now),
-	m_ini(m_baseNow),
-	m_now(0),
-	m_dur(0),
-	m_stopFrame(0),
-	m_leftStopFrame(0)
+Time::Unit Time::Unit::GetUnitFromCount(unsigned int count) {
+#ifndef NDEBUG
+	return Unit(GetFrameFromCount<unsigned int>(count));
+#else
+	return Unit(count);
+#endif
+}
+
+double Time::Unit::getFrame() const {
+#ifndef NDEBUG
+	return unit;
+#else
+	return GetFrameFromCount(unit);
+#endif
+}
+
+unsigned int Time::Unit::getCount() const {
+#ifndef NDEBUG
+	return GetCountFromFrame(unit);
+#else
+	return unit;
+#endif
+}
+
+Time::Level::Level(Level *p) : 
+	mBase(p),
+	mIni(p->mNow),
+	mNow(0U),
+	mDur(0U),
+	mStopFrameSum(0U),
+	mStopFrame(0U)
 {
-	mList.emplace_back(this);
-	mItr = --(mList.end());
 }
 
-Manager::Manager(Manager *manager) :
-	m_baseNow(manager->m_now),
-	m_ini(m_baseNow),
-	m_now(0),
-	m_dur(0),
-	m_stopFrame(0),
-	m_leftStopFrame(0)
+Time::Level::Level(std::nullptr_t) :
+	mBase(nullptr),
+	mIni(Unit::GetGlobalTime()),
+	mNow(0U),
+	mDur(0U),
+	mStopFrameSum(0U),
+	mStopFrame(0U)
 {
-	mList.emplace_back(this);
-	mItr = --(mList.end());
 }
 
-Manager::~Manager() {
-	mList.erase(mItr);
-}
-
-void Manager::m_update() {
-	unsigned int t = m_baseNow - m_ini - GetCountfromFrame(m_stopFrame);
-	m_dur = t - m_now;
-	if (m_leftStopFrame == 0) {
-		m_now = t;
-	}
-	else if (GetCountfromFrame(m_leftStopFrame) >= m_dur) {
-		m_dur = 0;
+void Time::Level::update() {
+	if( mStopFrame == 0 ) {
+		auto t = mNow;
+		mNow = mBase->mNow - mIni - Time::Unit::GetUnitFromFrame(mStopFrameSum);
+		mDur = mNow - t;
 	}
 	else {
-		m_dur -= GetCountfromFrame(m_leftStopFrame);
-		m_now += m_dur;
-		m_stopFrame += m_leftStopFrame;
-		m_leftStopFrame = 0;
+		if( mBase->mNow - mIni - mNow <= Time::Unit::GetUnitFromFrame(mStopFrame + mStopFrameSum) ) {
+			mDur = 0;
+		}
+		else {
+			mStopFrameSum += mStopFrame;
+			mStopFrame = 0;
+			auto t = mNow;
+			mNow = mBase->mNow - mIni - Time::Unit::GetUnitFromFrame(mStopFrameSum);
+			mDur = mNow - t;
+		}
 	}
 }
 
-void Manager::stop(const unsigned int &stopFrame) {
-	m_leftStopFrame = stopFrame;
+void Time::Level::stop() {
+	mStopFrame = (unsigned int)(-1 - mStopFrameSum);
 }
 
-void Manager::stop() {
-	m_leftStopFrame = (unsigned int)(-1);
-}
-void Manager::start() {
-	m_leftStopFrame = 0;
-	m_stopFrame += m_baseNow - m_ini - GetCountfromFrame(m_stopFrame) - m_now;
+void Time::Level::stop(const unsigned int frame) {
+	mStopFrame = frame;
 }
 
-void Manager::init() {
-	m_ini = m_baseNow;
-	m_now = 0;
-	m_dur = 0;
-	m_stopFrame = 0;
-	m_leftStopFrame = 0;
+void Time::Level::start() {
+	mStopFrame = 0;
+	mStopFrameSum = 0;
+	mIni = mBase->mNow - mNow;
 }
 
-float Manager::getDur() const {
-	return (GetFramefromCountf(m_dur));
-}
-double Manager::getNow() const {
-	return (GetFrameformCountd(m_now));
-}
-unsigned int Manager::getNowCount() const {
-	return (GetCount(m_now));
+Time::Time(Time::Level *p) :
+	mBase(p),
+	mIni(p->mNow)
+{
 }
 
-void Manager::update() {
-	unsigned int t = GetGrobalCount() - m_g_ini;
-	m_g_dur = t - m_g_now;
-	m_g_now = t;
-
-	for (auto &i : mList) {
-		i->m_update();
-	}
+void Time::update() {
+	//Globalのupdate
+	auto t = Level::Global.mNow;
+	Level::Global.mNow = Unit::GetGlobalTime() - Level::Global.mIni;
+	Level::Global.mDur = Level::Global.mNow - t;
 }
 
-std::list<Time::Manager*> Manager::mList;
-const unsigned int Time::Manager::m_g_ini = GetGrobalCount();
-unsigned int Time::Manager::m_g_now = 0;
-unsigned int Time::Manager::m_g_dur = 0;
-
-bool Time::Manager::operator==(const unsigned int &o) const {
-	return (m_now - GetCountfromFrame(o) < m_dur);
-}
-
-bool Time::Manager::operator<(const unsigned int &o) const {
-	return ((int)(GetCountfromFrame(o) - m_now) > 0);
-}
-bool Time::Manager::operator>(const unsigned int &o) const {
-	return ((int)(m_now - m_dur - GetCountfromFrame(o)) > 0);
-}
+Time::Level Time::Level::Global{nullptr};

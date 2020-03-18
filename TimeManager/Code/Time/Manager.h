@@ -1,83 +1,139 @@
-#pragma once
-#include<list>
+//Debug時のフレームレート
+constexpr unsigned int gFrameRate = 60;
 
-namespace Time {
-	constexpr unsigned int FrameRate = 60;
-	class Manager {
+class Time {
+public:
+	//グローバル時間の更新
+	//※必ずフレームの最初に更新
+	static void update();
+
+private:
+	//時間単位クラス
+	class Unit {
 	public:
-		//コンストラクタ等
-		Manager();
-		Manager(Manager *);
-		Manager(const Manager &) = delete; //コピー禁止
-		Manager &operator= (const Manager &) = delete; //コピー禁止
-		~Manager();
-
+		Unit(unsigned int unit = 0U) : 
+			unit(unit)
+		{
+		}
+		template<typename T>
+		const Unit &operator= (const T &o) {
+			unit = (unsigned int)(o);
+			return(*this);
+		}
 	private:
-		//privateメンバ変数
-		const unsigned int &m_baseNow; //上の階層の時間
-		unsigned int m_ini; //初期化時の上の階層の時間
-		unsigned int m_now; //初期化時からの時間(ms)
-		unsigned int m_dur; //前のフレームとの時間差(ms)
-		unsigned int m_stopFrame; //stop関数による上の階層とのズレ(F)
-		unsigned int m_leftStopFrame; //stop関数で指定された値(F)を保存するだけ。再度時間を進め始めたら0になる
-		
-		//メンバ関数
-		void m_update(); //m_now等を変更
+		unsigned int unit;
 	public:
-		void stop(const unsigned int &stopFrame); //m_leftStopFrameを書き換え
-		void stop(); //startするまでstop
-		void start(); //stopされてたものをstopFrameにかかわらずその地点から動かす
-		void init(); //上の階層の情報を除いてメンバをすべて初期状態に戻す
-		float getDur() const; //m_durをフレーム数換算したもの
-		double getNow() const; //m_nowをフレーム数換算したもの m_nowが大きくなると誤差も大きくなるので注意
-		unsigned int getNowCount() const; //現在の絶対時間を取得
+		//グローバル時間の取得
+		static Unit GetGlobalTime();
 
-	public:
-		//staticなメンバ関数
-		static void update();
+		//フレーム数をカウント(ms)に変換
+		static unsigned int GetCountFromFrame(double frame) {
+			return (unsigned int)(frame * ((double)1000 / 60));
+		}
 
-	private:
-		//staticなメンバ変数
-		static unsigned int m_g_now;
-		static const unsigned int m_g_ini;
-		static unsigned int m_g_dur;
+		//カウント(ms)をフレーム数に変換
+		template<typename T = double>
+		static T GetFrameFromCount(unsigned int count) {
+			return ((T)(count) * 60 / 1000);
+		}
 
-		//update関数関連
-		static std::list<Time::Manager*> mList;
-		std::list<Time::Manager*>::iterator mItr;
+		//フレーム数をUnitに変換
+		static Unit GetUnitFromFrame(double);
+
+		//カウント(ms)をUnitに変換
+		static Unit GetUnitFromCount(unsigned int);
+
+		//フレーム数を取得
+		double getFrame() const;
+
+		//カウント(ms)を取得
+		unsigned int getCount() const;
 
 	public:
 		//operator
-		bool operator==(const unsigned int &o) const;
-		bool operator!=(const unsigned int &o) const {
-			return !((*this) == o);
+		operator unsigned int() const {
+			return unit;
 		}
-		bool operator>(const unsigned int &o) const;
-		bool operator<(const unsigned int &o) const;
-		bool operator>=(const unsigned int &o) const {
-			return !((*this) < o);
+		template<typename T>
+		Unit operator+(const T &o) const {
+			return Unit(unit + (unsigned int)(o));
 		}
-		bool operator<=(const unsigned int &o) const {
+		template<typename T>
+		Unit operator-(const T &o) const {
+			return Unit(unit - (unsigned int)(o));
+		}
+		unsigned int operator()() const {
+			return unit;
+		}
+		template<typename T>
+		bool operator<(const T &o) const {
+			return (unit < (unsigned int)(o));
+		}
+		template<typename T>
+		bool operator>(const T &o) const {
+			return (unit > (unsigned int)(o));
+		}
+		template<typename T>
+		bool operator<=(const T &o) const {
 			return !((*this) > o);
 		}
+		template<typename T>
+		bool operator>=(const T &o) const {
+			return !((*this) < o);
+		}
 	};
-}
+public:
+	class Level {
+	public:
+		Level(Level *p = &Level::Global);
 
-inline bool operator==(const unsigned int &o1, const Time::Manager &o2) {
-	return (o2 == o1);
-}
-inline bool operator!=(const unsigned int &o1, const Time::Manager &o2) {
-	return (o2 != o1);
-}
-inline bool operator>(const unsigned int &o1, const Time::Manager &o2) {
-	return (o2 < o1);
-}
-inline bool operator<(const unsigned int &o1, const Time::Manager &o2) {
-	return (o2 > o1);
-}
-inline bool operator>=(const unsigned int &o1, const Time::Manager &o2) {
-	return (o2 <= o1);
-}
-inline bool operator<=(const unsigned int &o1, const Time::Manager &o2) {
-	return (o2 >= o1);
-}
+	private:
+		//Global専用コンストラクタ
+		Level(std::nullptr_t);
+
+		static Level Global;
+
+	private:
+		Level *mBase;
+		Unit mIni;
+		Unit mNow;
+		Unit mDur;
+		unsigned int mStopFrameSum;
+		unsigned int mStopFrame;
+
+	public:
+
+		//階層更新
+		//基底になる階層の更新の後に実行
+		void update();
+
+		//startされるまで時間停止
+		void stop();
+
+		//指定フレーム数時間停止
+		void stop(const unsigned int frame);
+
+		//強制的に時間計測を再開
+		void start();
+
+		friend Time;
+	};
+	
+	Time(Level *p = &Level::Global);
+private:
+	Level const *const mBase;
+	Unit mIni;
+
+public:
+	//フレーム数取得
+	double getNow() const {
+		return (mBase->mNow - mIni).getFrame();
+	}
+	
+	//カウント(ms)取得
+	unsigned int getNowCount() const {
+		return (mBase->mNow - mIni).getCount();
+	}
+
+
+};

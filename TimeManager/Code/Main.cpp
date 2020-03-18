@@ -19,18 +19,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SetWindowSizeChangeEnableFlag(TRUE); //ウィンドウを自由に拡大縮小できるように設定
 	SetDrawMode(DX_DRAWMODE_BILINEAR); //拡大縮小で負荷を重くしてきれいに描画できるようにする
 
-	Time::Manager t;
+	Time::Level level;
+
+	Time time(&level);
 
 	while (ProcessMessage() == 0) {
 		ClearDrawScreen();
-		Time::Manager::update();
+		Time::update();
+		level.update();
 
-		if (CheckHitKey(KEY_INPUT_Z)) t.stop();
-		if (CheckHitKey(KEY_INPUT_X)) t.start();
+		DrawFormatString(0, 0, 0xffffff, "%u", time.getNowCount());
+
+		if( CheckHitKey(KEY_INPUT_SPACE) ) {
+			level.stop();
+		}
+		else {
+			level.start();
+		}
 
 
-		DrawFormatString(0, 0, 0xffffff, "%lf", t.getNow() / 60); //垂直同期を切っていても正常に時間を取得
-
+		if( CheckHitKey(KEY_INPUT_ESCAPE) ) break;
 		ScreenFlip();
 		
 #ifdef NDEBUG
